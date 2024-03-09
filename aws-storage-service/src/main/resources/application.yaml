@@ -1,0 +1,39 @@
+server:
+  servlet.contextPath: /storage-service
+  port: 8080
+
+spring:
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 4294967296 # 4 GB
+      max-request-size: 4294967296 # 4 GB
+  datasource:
+    url: jdbc:h2:mem:core-storage
+    username: ${H2_USER:user}
+    password: ${H2_PASSWORD:password}
+    driverClassName: org.h2.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create
+  h2:
+    console:
+      enabled: true
+
+minio:
+  url: ${MINIO_URL:http://demo-project-images.s3-website.eu-central-1.amazonaws.com}
+  access-key: ${MINIO_ACCESS_KEY:AKIA4NZYKLDFZIC2UZ4Q}
+  secret-key: ${MINIO_SECRET_KEY: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}
+  region: ${MINIO_REGION:eu-central-1}
+  bucketName: ${MINIO_BUCKET_NAME:demo-project-images}
+  rootDirectory: ${MINIO_CURRENT_DIRECTORY:images}
+  expiryTime: ${MINIO_PRESIGNED_URL_EXPIRY_TIME:1800}
+  minPartSize: ${MINIO_MIN_UPLOAD_PART_SIZE:20971520}
+  retryMaxAttempts: ${MINIO_RETRY_MAX_ATTEMPTS:3}
+  retryFixedBackOff: ${MINIO_FIXED_BACKOFF:1000}
+  httpClient:
+    connectTimeout: ${MINIO_CONNECT_TIMEOUT:PT5M}
+    writeTimeout: ${MINIO_WRITE_TIMEOUT:PT5M}
+    readTimeout: ${MINIO_READ_TIMEOUT:PT5M}
+    retryOnConnectionFailure: ${MINIO_RETRY_ON_CONNECTION_FAILURE:false}
