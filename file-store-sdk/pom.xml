@@ -6,7 +6,6 @@
 		<groupId>com.demo</groupId>
 		<artifactId>core-storage-service</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
-		<relativePath/>
 	</parent>
 
 	<artifactId>file-store-sdk</artifactId>
