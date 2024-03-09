@@ -1,7 +1,7 @@
 minio:
   url: ${MINIO_URL:http://demo-project-images.s3-website.eu-central-1.amazonaws.com}
-  access-key: ${MINIO_ACCESS_KEY:AKIA4NZYKLDFZIC2UZ4Q}
-  secret-key: ${MINIO_SECRET_KEY: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}
+  access-key: ${MINIO_ACCESS_KEY:}
+  secret-key: ${MINIO_SECRET_KEY:}
   region: ${MINIO_REGION:eu-central-1}
   bucketName: ${MINIO_BUCKET_NAME:demo-project-images}
   rootDirectory: ${MINIO_CURRENT_DIRECTORY:}

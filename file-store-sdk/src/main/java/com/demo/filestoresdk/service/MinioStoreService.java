@@ -54,9 +54,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.Tika;
 import org.apache.tika.io.TikaInputStream;
 import org.springframework.retry.support.RetryTemplate;
+import org.springframework.stereotype.Service;
 
 @Slf4j
 @RequiredArgsConstructor
+@Service
 public class MinioStoreService {
 
     private final Tika tika = new Tika();
