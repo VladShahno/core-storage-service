@@ -7,31 +7,22 @@ import static com.demo.filestoresdk.utils.FileStoreConstants.ErrorCodes.GET_DATA
 import static com.demo.filestoresdk.utils.FileStoreConstants.ErrorCodes.GET_FILES_NAME_FROM_BUCKET;
 import static com.demo.filestoresdk.utils.FileStoreConstants.ErrorCodes.GET_METADATA_ERROR;
 import static com.demo.filestoresdk.utils.FileStoreConstants.ErrorCodes.GET_PRESIGNED_ERROR;
-import static com.demo.filestoresdk.utils.FileStoreConstants.ErrorCodes.GET_TAGS_ERROR;
 import static com.demo.filestoresdk.utils.FileStoreConstants.ErrorCodes.REMOVE_ERROR;
 import static com.demo.filestoresdk.utils.FileStoreConstants.ErrorCodes.SAVE_ERROR_CODE;
-import static com.demo.filestoresdk.utils.FileStoreConstants.ErrorCodes.SAVE_TAGS_ERROR;
 import static com.demo.filestoresdk.utils.FileStoreConstants.ErrorCodes.SCAN_FILE_NOT_FOUND;
-import static com.demo.filestoresdk.utils.FileStoreConstants.ErrorCodes.STATUS_ABSENT_ERROR;
-import static com.demo.filestoresdk.utils.FileStoreConstants.ErrorCodes.STATUS_INFECTED_ERROR;
-import static com.demo.filestoresdk.utils.FileStoreConstants.FileMetadataHeaders.AV_STATUS;
-import static com.demo.filestoresdk.utils.FileStoreConstants.FileMetadataHeaders.AV_TIMESTAMP;
-import static com.demo.filestoresdk.utils.FileStoreConstants.FileStatus.INFECTED;
 import static com.demo.filestoresdk.utils.FileTools.PATH_DELIMITER;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 
 import com.demo.filestoresdk.configutation.MinioClientData;
-import com.demo.filestoresdk.exception.BadRequestRestException;
-import com.demo.filestoresdk.exception.InternalErrorException;
-import com.demo.filestoresdk.exception.NotFoundException;
 import com.demo.filestoresdk.model.DownloadFile;
 import com.demo.filestoresdk.model.FileDto;
 import com.demo.filestoresdk.model.FileStoreDto;
 import com.demo.filestoresdk.model.FileUri;
+import com.demo.reststarter.exception.InternalErrorException;
+import com.demo.reststarter.exception.NotFoundException;
 import io.minio.CopyObjectArgs;
 import io.minio.CopySource;
 import io.minio.GetObjectArgs;
-import io.minio.GetObjectTagsArgs;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.ListObjectsArgs;
 import io.minio.MinioClient;
@@ -39,7 +30,6 @@ import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import io.minio.RemoveObjectsArgs;
 import io.minio.Result;
-import io.minio.SetObjectTagsArgs;
 import io.minio.StatObjectArgs;
 import io.minio.StatObjectResponse;
 import io.minio.errors.ErrorResponseException;
@@ -52,7 +42,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +50,6 @@ import java.util.function.Predicate;
 import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Headers;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.Tika;
 import org.apache.tika.io.TikaInputStream;
@@ -144,29 +132,6 @@ public class MinioStoreService {
         }
     }
 
-    public void setAntivirusTags(String bucketName, String filePath, String status) {
-        try {
-            var tags = Map.of(AV_STATUS, status, AV_TIMESTAMP, new Date().toString());
-
-            minioClient.setObjectTags(SetObjectTagsArgs.builder()
-                .bucket(bucketName)
-                .object(getRelativeFilePath(filePath))
-                .tags(tags)
-                .build());
-        } catch (MinioException | GeneralSecurityException | IOException e) {
-            log.error(e.getLocalizedMessage(), e);
-            throw new InternalErrorException(SAVE_TAGS_ERROR, e);
-        }
-    }
-
-    public DownloadFile getFileFromStorageForScan(String filePath) {
-        return getFileFromStorage(minioClientData.getBucketName(), filePath, null);
-    }
-
-    public DownloadFile getFileFromStorageForScan(String bucketName, String filePath) {
-        return getFileFromStorage(bucketName, filePath, null);
-    }
-
     private DownloadFile getFileFromStorage(String bucketName, String filePath,
         StatObjectResponse objectStat) {
         try {
@@ -186,19 +151,11 @@ public class MinioStoreService {
 
     public DownloadFile getFileFromStorage(String filePath) {
         var objectStat = getFileStat(filePath);
-        checkScanStatus(filePath, objectStat.headers());
 
         return getFileFromStorage(minioClientData.getBucketName(), filePath, objectStat);
     }
 
     public DownloadFile getFileFromStorage(String bucketName, String filePath) {
-        var objectStat = getFileStat(bucketName, filePath);
-        checkScanStatus(filePath, objectStat.headers());
-        return getFileFromStorage(bucketName, filePath, objectStat);
-    }
-
-    public DownloadFile getFileFromStorageWithoutCheckScanStatus(String bucketName,
-        String filePath) {
         var objectStat = getFileStat(bucketName, filePath);
         return getFileFromStorage(bucketName, filePath, objectStat);
     }
@@ -207,26 +164,6 @@ public class MinioStoreService {
         return filePath != null && filePath.startsWith("/")
             ? filePath.replaceFirst("/", "")
             : filePath;
-    }
-
-    private void checkScanStatus(String filePath, Headers headers) {
-        try {
-            var tags = minioClient.getObjectTags(GetObjectTagsArgs.builder()
-                    .bucket(minioClientData.getBucketName())
-                    .object(getRelativeFilePath(filePath))
-                    .build())
-                .get();
-            if (StringUtils.isBlank(tags.get(AV_STATUS)) && StringUtils.isBlank(
-                headers.get(AV_STATUS))) {
-                throw new BadRequestRestException(STATUS_ABSENT_ERROR);
-            }
-            if (INFECTED.equalsIgnoreCase(tags.get(AV_STATUS)) || INFECTED.equalsIgnoreCase(
-                headers.get(AV_STATUS))) {
-                throw new BadRequestRestException(STATUS_INFECTED_ERROR);
-            }
-        } catch (MinioException | GeneralSecurityException | IOException e) {
-            throw new InternalErrorException(GET_TAGS_ERROR, e);
-        }
     }
 
     public StatObjectResponse getFileStat(String filePath) {
@@ -376,26 +313,21 @@ public class MinioStoreService {
     }
 
     public String presignedGetObject(String objectName, Map<String, String> reqParams) {
-        return getPresignedObject(objectName, reqParams, minioClientData.getExpiryTime(), true);
+        return getPresignedObject(objectName, reqParams, minioClientData.getExpiryTime());
     }
 
     public String presignedGetObjectWithOutFileScanCheck(
         String objectName,
         Map<String, String> reqParams,
         int expiryTime) {
-        return getPresignedObject(objectName, reqParams, expiryTime, false);
+        return getPresignedObject(objectName, reqParams, expiryTime);
     }
 
     private String getPresignedObject(
         String objectName,
         Map<String, String> reqParams,
-        int expiryTime,
-        boolean checkScanStatus) {
+        int expiryTime) {
         try {
-            if (checkScanStatus) {
-                checkScanStatus(objectName, getFileStat(objectName).headers());
-            }
-
             var getPresignedObjectUrlArgs = GetPresignedObjectUrlArgs.builder()
                 .method(Method.GET)
                 .bucket(minioClientData.getBucketName())

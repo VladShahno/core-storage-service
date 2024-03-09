@@ -18,6 +18,8 @@
 
 	<modules>
 		<module>file-store-sdk</module>
+		<module>aws-storage-service</module>
+		<module>rest-starter</module>
 	</modules>
 
 	<properties>
@@ -31,6 +33,8 @@
 		<spring-retry.version>2.0.5</spring-retry.version>
 		<javax.validation.version>2.0.1.Final</javax.validation.version>
 		<commons-codec.version>1.16.1</commons-codec.version>
+		<swagger-annotations.version>2.2.19</swagger-annotations.version>
+		<springdoc.version>2.0.2</springdoc.version>
 	</properties>
 
 	<dependencies>
@@ -123,6 +127,16 @@
 			<groupId>commons-codec</groupId>
 			<artifactId>commons-codec</artifactId>
 			<version>${commons-codec.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.swagger.core.v3</groupId>
+			<artifactId>swagger-annotations</artifactId>
+			<version>${swagger-annotations.version}</version>
+		</dependency>
+		<dependency>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<groupId>org.springdoc</groupId>
+			<version>${springdoc.version}</version>
 		</dependency>
 	</dependencies>
 
